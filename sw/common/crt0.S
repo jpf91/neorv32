@@ -145,9 +145,17 @@ __crt0_reg_file_clear:
 __crt0_reset_io:
   la   x8,   __crt0_io_space_begin         // start of processor-internal IO region
   la   x9,   __crt0_io_space_end           // end of processor-internal IO region
+  la   x10,  0xFFFFFF40                    // start of XIP region
+  la   x11,  0xFFFFFF50                    // past end of XIP region
 
 __crt0_reset_io_loop:
+#ifndef make_bootloader
+  bltu x8, x10, __crt0_reset_io_loop_do
+  bltu x8, x11, __crt0_reset_io_loop_skip
+#endif
+__crt0_reset_io_loop_do:
   sw   zero, 0(x8)
+__crt0_reset_io_loop_skip:
   addi x8,   x8, 4
   bne  x8,   x9, __crt0_reset_io_loop
 
