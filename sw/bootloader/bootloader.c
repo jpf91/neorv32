@@ -96,6 +96,16 @@
   #define SPI_BOOT_BASE_ADDR 0x00400000UL
 #endif
 
+/** Drive SPI flash write protect (low active) pin */
+#ifndef FLASH_NWP_EN
+  #define FLASH_NWP_EN 1
+#endif
+
+/** SPI flash write protect (low-active) at GPIO(FLASH_NWP_PIN) */
+#ifndef FLASH_NWP_PIN
+  #define FLASH_NWP_PIN 3
+#endif
+
 /* -------- XIP configuration -------- */
 
 /** Enable XIP boot options */
@@ -621,6 +631,12 @@ void save_exe(void) {
     system_error(ERROR_FLASH);
   }
 
+#if (FLASH_NWP_EN != 0)
+  if (neorv32_gpio_available()) {
+    neorv32_gpio_pin_set(FLASH_NWP_PIN, 1);
+  }
+#endif
+
   PRINT_TEXT("\nFlashing... ");
 
   // clear memory before writing
@@ -648,6 +664,12 @@ void save_exe(void) {
   spi_flash_write_word(SPI_BOOT_BASE_ADDR + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE); // EXE signature
   spi_flash_write_word(SPI_BOOT_BASE_ADDR + EXE_OFFSET_SIZE, size); // size
   spi_flash_write_word(SPI_BOOT_BASE_ADDR + EXE_OFFSET_CHECKSUM, (~checksum)+1); // checksum (sum complement)
+
+#if (FLASH_NWP_EN != 0)
+  if (neorv32_gpio_available()) {
+    neorv32_gpio_pin_set(FLASH_NWP_PIN, 0);
+  }
+#endif
 
   PRINT_TEXT("OK");
 #endif
